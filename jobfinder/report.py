@@ -1,0 +1,109 @@
+"""report.py : génère docs/index.html (une seule page autonome, sans serveur)."""
+import json
+import os
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+TEMPLATE = r"""<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mon dashboard d'offres</title>
+<style>
+:root{--bg:#f6f7f9;--cd:#fff;--tx:#1b1f24;--mu:#6a737d;--ac:#2457d6;--bd:#dde1e6;--ok:#1a7f37;--wr:#c2410c}
+@media(prefers-color-scheme:dark){:root{--bg:#14171b;--cd:#1e2228;--tx:#e8eaed;--mu:#9aa3ad;--ac:#6c9cff;--bd:#323840;--ok:#4cc26b;--wr:#ff9a5c}}
+*{box-sizing:border-box}body{margin:0;font:15px/1.4 system-ui,sans-serif;background:var(--bg);color:var(--tx)}
+header,main{max-width:860px;margin:auto;padding:12px}h1{font-size:20px;margin:4px 0}
+.mu{color:var(--mu);font-size:13px}
+nav{display:flex;gap:6px;overflow-x:auto;padding:4px 0}
+nav button,.ch,.a button,.io button,.io label{border:1px solid var(--bd);background:var(--cd);color:var(--tx);border-radius:16px;padding:6px 12px;font-size:13px;cursor:pointer;white-space:nowrap}
+nav button.on,.ch.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+#q{width:100%;padding:10px;border:1px solid var(--bd);border-radius:8px;background:var(--cd);color:var(--tx);margin:6px 0}
+#chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.c{display:flex;gap:10px;background:var(--cd);border:1px solid var(--bd);border-radius:10px;padding:10px;margin:8px 0}
+.sc{min-width:42px;height:42px;border-radius:50%;background:var(--ac);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700}
+.m{flex:1;min-width:0}.m>a{font-weight:600;color:var(--tx);text-decoration:none}.co{color:var(--mu);font-size:13px}
+.b{display:inline-block;font-size:11px;border:1px solid var(--bd);border-radius:10px;padding:1px 7px;margin:3px 3px 0 0}
+.b.n{background:var(--ok);color:#fff;border-color:var(--ok)}.b.v,.b.r{background:var(--wr);color:#fff;border-color:var(--wr)}
+details{margin:6px 0;font-size:13px}summary{cursor:pointer;color:var(--ac)}.d{color:var(--mu)}
+.a{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+select,input[type=date],textarea{padding:6px;border:1px solid var(--bd);border-radius:6px;background:var(--cd);color:var(--tx)}
+textarea{width:100%;margin-top:6px}
+table{width:100%;border-collapse:collapse;font-size:13px}td,th{border-bottom:1px solid var(--bd);padding:6px;text-align:left;vertical-align:top}
+.e{text-align:center;color:var(--mu);padding:30px 0}
+#t{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 14px;border-radius:8px}
+#t button{margin-left:8px}.io{display:flex;gap:6px;margin-top:6px}.io input{display:none}
+</style></head><body>
+<header><h1>Mon dashboard d'offres</h1>
+<div class="mu">Mis à jour le __UPDATED__ (heure de Paris)</div>
+<div class="io"><button onclick="exp()">Exporter mes choix</button><label>Importer<input type="file" accept=".json" onchange="imp(event)"></label></div>
+<nav id="tabs"></nav></header>
+<main><div id="bar"><input id="q" type="search" placeholder="Rechercher (titre, entreprise, ville…)" oninput="q=this.value.toLowerCase();render()"><div id="chips"></div></div><div id="l"></div></main>
+<div id="t" hidden></div>
+<script type="application/json" id="d">__DATA__</script>
+<script>
+const D=JSON.parse(document.getElementById('d').textContent),O=D.offers,SRC=D.sources,KEY='jd_state_v1';
+let S={};try{S=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+let tab='offres',q='',chips=new Set(),undo=null,tm;
+const $=s=>document.querySelector(s),g=u=>S[u]||{},st=u=>S[u]||(S[u]={});
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const today=()=>new Date().toISOString().slice(0,10),days=d=>Math.floor((Date.now()-new Date(d))/864e5);
+const STATUS=['Postulé','Relancé','Entretien','Offre','Refusé'];
+const CH=[['n','Nouveau',o=>o.is_new],['s','Stage',o=>o.contract==='stage'],['v','VIE',o=>o.contract==='VIE'],['g','Graduate',o=>o.contract==='graduate'],['nv','Sans VISA',o=>!o.badges.includes('VISA')],['70','Score 70+',o=>o.score>=70]];
+function toast(m){const t=$('#t');t.innerHTML=esc(m)+'<button onclick="doUndo()">Annuler</button>';t.hidden=false;clearTimeout(tm);tm=setTimeout(()=>{t.hidden=true;undo=null},6000)}
+function doUndo(){if(undo){undo();undo=null;save();render()}$('#t').hidden=true}
+function act(u,a){const s=st(u),o=O.find(x=>x.uid===u),p=JSON.parse(JSON.stringify(s));
+ if(a==='keep')s.k=s.k?0:1;
+ if(a==='apply'){Object.assign(s,{a:1,k:0,h:0,date:today(),status:'Postulé',info:{t:o.title,c:o.company,u:o.url}});undo=()=>{S[u]=p};toast('Candidature enregistrée')}
+ if(a==='hide'){s.h=1;s.k=0;undo=()=>{S[u]=p};toast('Offre masquée')}
+ if(a==='restore')s.h=0;
+ save();render()}
+function setf(u,f,v){st(u)[f]=v;save();render()}
+function rm(u){const p=JSON.stringify(S[u]);delete S[u];undo=()=>{S[u]=JSON.parse(p)};toast('Candidature retirée');save();render()}
+function exp(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:'application/json'}));a.download='mes-choix-dashboard.json';a.click()}
+function imp(e){const f=e.target.files[0];if(!f)return;f.text().then(t=>{try{Object.assign(S,JSON.parse(t));save();render()}catch(x){alert('Fichier invalide')}})}
+function tgl(k){chips.has(k)?chips.delete(k):chips.add(k);render()}
+function card(o,tb){const s=g(o.uid);
+ const btn=tb==='masq'?`<button onclick="act('${o.uid}','restore')">↩ Restaurer</button>`:`<button onclick="act('${o.uid}','keep')">${s.k?'★ Gardée':'☆ Garder'}</button><button onclick="act('${o.uid}','apply')">✓ Postulé</button><button onclick="act('${o.uid}','hide')">✕ Pas pour moi</button>`;
+ return `<article class="c"><div class="sc">${o.score}</div><div class="m"><a href="${esc(o.url)}" target="_blank" rel="noopener">${esc(o.title)}</a><div class="co">${esc(o.company)}</div><div>${o.badges.map(b=>`<span class="b ${b==='NOUVEAU'?'n':b==='VISA'||b.startsWith('URGENT')?'v':''}">${esc(b)}</span>`).join('')}</div>
+ <details><summary>Pourquoi ce score ?</summary><ul>${o.score_details.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>${o.start_date?`<p>Début : ${esc(o.start_date)}</p>`:''}${o.deadline?`<p>Date limite : ${esc(o.deadline)}</p>`:''}${o.salary?`<p>Salaire : ${esc(o.salary)}</p>`:''}<p class="d">${esc(o.description)}</p></details><div class="a">${btn}</div></div></article>`}
+function app(u,s){const i=s.info||{},rel=s.status==='Postulé'&&days(s.date)>=10;
+ return `<article class="c"><div class="m"><a href="${esc(i.u)}" target="_blank" rel="noopener">${esc(i.t)}</a><div class="co">${esc(i.c)}</div>${rel?'<span class="b r">À RELANCER</span>':''}<div class="a"><select onchange="setf('${u}','status',this.value)">${STATUS.map(x=>`<option${x===s.status?' selected':''}>${x}</option>`).join('')}</select><input type="date" value="${esc(s.date)}" onchange="setf('${u}','date',this.value)"><button onclick="rm('${u}')">Retirer</button></div><textarea placeholder="Notes" onchange="setf('${u}','note',this.value)">${esc(s.note)}</textarea></div></article>`}
+function srcTable(){return `<table><tr><th>Source</th><th>Trouvées</th><th>Gardées</th><th>Retirées (par filtre)</th></tr>${SRC.map(s=>`<tr><td>${esc(s.name)}${s.error?`<br><span class="b r">${esc(s.error)}</span>`:''}</td><td>${s.found}</td><td>${s.kept}</td><td>${Object.entries(s.removed).map(([k,v])=>`${esc(k)} : ${v}`).join('<br>')||'—'}</td></tr>`).join('')}</table><p class="mu">Une source à 0 offre trouvée est peut-être bloquée ou cassée.</p>`}
+function render(){
+ const L={offres:O.filter(o=>!g(o.uid).h&&!g(o.uid).a),gardees:O.filter(o=>g(o.uid).k&&!g(o.uid).h&&!g(o.uid).a),masq:O.filter(o=>g(o.uid).h)},apps=Object.entries(S).filter(([u,s])=>s.a);
+ const T=[['offres','Offres',L.offres.length],['gardees','Gardées',L.gardees.length],['cand','Candidatures',apps.length],['masq','Masquées',L.masq.length],['src','Sources','']];
+ $('#tabs').innerHTML=T.map(t=>`<button class="${tab===t[0]?'on':''}" onclick="tab='${t[0]}';render()">${t[1]} ${t[2]}</button>`).join('');
+ const lst=['offres','gardees','masq'].includes(tab);$('#bar').style.display=lst?'':'none';
+ $('#chips').innerHTML=CH.map(c=>`<span class="ch ${chips.has(c[0])?'on':''}" onclick="tgl('${c[0]}')">${c[1]}</span>`).join('');
+ const ok=o=>(!q||(o.title+' '+o.company+' '+o.city+' '+o.country).toLowerCase().includes(q))&&[...chips].every(k=>CH.find(c=>c[0]===k)[2](o));
+ let h;
+ if(tab==='cand')h=apps.length?apps.map(([u,s])=>app(u,s)).join(''):'<p class="e">Aucune candidature.</p>';
+ else if(tab==='src')h=srcTable();
+ else{const l=L[tab].filter(ok);h=l.length?l.map(o=>card(o,tab)).join(''):'<p class="e">Rien à afficher.</p>'}
+ $('#l').innerHTML=h}
+render();
+</script></body></html>"""
+
+
+def generate(offers, stats, labels, tz_name="Europe/Paris", path="docs/index.html"):
+    """Écrit la page. `stats` et `labels` viennent de matching.process / REASON_LABELS."""
+    now = datetime.now(ZoneInfo(tz_name))
+    sources = [{
+        "name": name,
+        "found": s["trouvees"],
+        "kept": s["gardees"],
+        "removed": {labels.get(k, k): v for k, v in s["retirees"].items()},
+        "error": s.get("erreur", ""),
+    } for name, s in sorted(stats.items())]
+    rows = []
+    for offer in offers:
+        d = offer.to_dict()
+        d["description"] = (d["description"] or "")[:500]
+        rows.append(d)
+    data = json.dumps({"offers": rows, "sources": sources}, ensure_ascii=False)
+    data = data.replace("</", "<\\/")
+    html = TEMPLATE.replace("__DATA__", data).replace("__UPDATED__", now.strftime("%d/%m/%Y à %H:%M"))
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(html)
