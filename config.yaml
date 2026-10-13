@@ -1,0 +1,257 @@
+# =====================================================================
+# MES PRÉFÉRENCES : fichier à modifier sans coder
+# Les lignes qui commencent par # sont des commentaires (ignorées).
+# Garde bien les espaces au début des lignes : ils font partie du format.
+# =====================================================================
+
+# ---------------------------------------------------------------------
+# 1. TYPES DE CONTRAT
+# ---------------------------------------------------------------------
+contrats:
+  acceptes: [stage, VIE, graduate]
+  # Refusés par mon école : CDI, alternance, volontariat (hors VIE)
+  refuses: [CDI, alternance, volontariat]
+
+# ---------------------------------------------------------------------
+# 2. CALENDRIER
+# ---------------------------------------------------------------------
+calendrier:
+  # Stage de fin d'études : 4 à 6 mois, début fin mars / début avril 2027
+  stage:
+    debut_au_plus_tot: "2027-03-15"
+    debut_au_plus_tard: "2027-05-01"
+    duree_mois_min: 4
+    duree_mois_max: 6
+  # VIE et graduate programs : on garde TOUT, même s'ils démarrent plus tard
+  vie_et_graduate:
+    filtrer_par_date_de_debut: false
+
+# ---------------------------------------------------------------------
+# 3. MÉTIERS (intitulés recherchés dans les offres, FR et EN)
+# ---------------------------------------------------------------------
+metiers:
+  prioritaires:
+    - strategy consulting
+    - strategy consultant
+    - business analyst intern
+    - associate consultant
+    - conseil en stratégie
+    - corporate strategy
+    - strategic planning
+    - stratégie corporate
+    - business development
+    - international business development
+    - strategic partnerships
+    - market entry
+    - développement international
+    - market intelligence
+    - competitive intelligence
+    - strategic intelligence
+    - geopolitical risk
+    - country risk
+    - veille stratégique
+    - intelligence économique
+    - chief of staff
+    - strategic projects
+    - office of the ceo
+    - direction générale
+  # Acceptés avec un score plus bas, s'il y a une vraie dimension stratégique
+  acceptables:
+    - strategy analyst
+    - business analyst
+    - business operations
+    - transformation
+
+# ---------------------------------------------------------------------
+# 4. CE QU'ON ÉCARTE OU PÉNALISE
+# ---------------------------------------------------------------------
+# Mots qui font DISPARAÎTRE l'offre (si présents dans le titre)
+exclure_si_titre_contient:
+  - sales representative
+  - business developer junior prospection
+  - commercial terrain
+  - retail
+  - magasin
+  - store manager
+
+# Mots qui font BAISSER FORTEMENT le score (offre gardée mais en bas de liste)
+penaliser_si_titre_contient:
+  - marketing
+  - communication
+  - événementiel
+  - event
+  - social media
+  - sales
+  - vente
+  - contrôle de gestion
+  - controlling
+  - comptabilité
+  - accounting
+  - audit financier
+  - M&A modeling
+  - développeur
+  - developer
+  - data engineer
+  - assistant administratif
+  - reporting
+
+# Expérience : on accepte jusqu'à 2 ans d'expérience demandée
+experience:
+  annees_max: 2
+
+# ---------------------------------------------------------------------
+# 5. ENTREPRISES ET SECTEURS
+# ---------------------------------------------------------------------
+entreprises_prioritaires:
+  - BCG
+  - Boston Consulting Group
+  - Bain
+  - McKinsey
+  - Roland Berger
+  - Deloitte
+  - EY
+  - PwC
+  - Airbus
+  - Google
+  - Orange
+  - FIFA
+  - UEFA
+
+entreprises_exclues: []   # à remplir si besoin, ex : [Nom1, Nom2]
+
+secteurs_prioritaires:
+  - conseil
+  - tech
+  - intelligence artificielle
+  - crypto
+  - télécommunications
+  - énergie
+  - transition énergétique
+  - défense
+  - aéronautique
+  - spatial
+  - sport 
+  - industrie
+
+secteurs_acceptes_si_mission_strategique:
+  - luxe
+
+secteurs_exclus:
+  - retail
+  - grande distribution
+
+# Taille préférée : grands groupes internationaux et cabinets reconnus
+taille_preferee: [grand groupe, cabinet de conseil]
+
+# ---------------------------------------------------------------------
+# 6. LIEUX
+# ---------------------------------------------------------------------
+lieux:
+  pays_acceptes:
+    - France
+    - Belgique
+    - Royaume-Uni
+    - Suisse
+    - Luxembourg
+    - Pays-Bas
+    - Allemagne
+    - Espagne
+    - Italie
+    - Irlande
+    - Portugal
+    - Émirats arabes unis
+    - Arabie saoudite
+    - Qatar
+    - Canada
+    - Australie
+    - Brésil
+  villes_favorites:
+    - Paris
+    - Bruxelles
+    - Londres
+    - Zurich
+    - Genève
+    - Luxembourg
+    - Dubaï
+    - Riyad
+    - Doha
+  # Pays où un badge VISA s'affiche (à vérifier offre par offre)
+  pays_avec_badge_visa:
+    - Royaume-Uni
+    - Suisse
+    - Émirats arabes unis
+    - Arabie saoudite
+    - Qatar
+    - Canada
+    - Australie
+    - Brésil
+  teletravail: indifferent   # hybride apprécié, présentiel accepté
+
+# ---------------------------------------------------------------------
+# 7. LANGUES
+# ---------------------------------------------------------------------
+langues:
+  parlees:
+    francais: natif
+    anglais: C1
+    espagnol: B1
+    portugais: A2
+  # Jamais bloquantes : on baisse juste le score
+  penaliser_si_exigee: [portugais courant, allemand courant, arabe courant]
+
+# ---------------------------------------------------------------------
+# 8. POIDS DU SCORE (total = 100)
+# ---------------------------------------------------------------------
+poids:
+  metier: 30
+  employeur_secteur: 20
+  contrat_calendrier: 10
+  lieu: 10
+  accessibilite: 10
+  fraicheur: 10
+  mots_bonus: 8
+  salaire: 2
+
+mots_bonus:
+  - géopolitique
+  - geopolitical
+  - international
+  - direction générale
+  - ceo
+  - c-suite
+  - croissance
+  - growth
+  - souveraineté
+  - transformation stratégique
+
+# ---------------------------------------------------------------------
+# 9. NOTIFICATIONS PAR E-MAIL
+# ---------------------------------------------------------------------
+notifications:
+  alerte_immediate_si_score_superieur_a: 80
+  recapitulatif_hebdomadaire: true
+  jour_du_recapitulatif: lundi
+  alerte_date_limite_jours_avant: 14
+
+# Dates limites connues des cabinets (à remplir à la main)
+# Exemple :
+# dates_limites_manuelles:
+#   - entreprise: "Nom du cabinet"
+#     poste: "Intitulé"
+#     date_limite: "2026-12-15"
+dates_limites_manuelles: []
+
+# ---------------------------------------------------------------------
+# 10. SOURCES (true = activée, false = désactivée)
+# ---------------------------------------------------------------------
+sources:
+  business_france: true     # VIE : fiable
+  sites_carrieres: true     # cabinets et grands groupes (à compléter plus tard)
+  france_travail: true      # ignorée si aucune clé n'est fournie
+  welcome_to_the_jungle: true   # fragile
+  linkedin: true                # fragile, souvent bloqué
+  indeed: true                  # fragile
+  apec: true                    # fragile
+
+# Fuseau horaire pour l'affichage de la date de mise à jour
+fuseau_horaire: Europe/Paris
