@@ -255,3 +255,11 @@ sources:
 
 # Fuseau horaire pour l'affichage de la date de mise à jour
 fuseau_horaire: Europe/Paris
+
+# ---------------------------------------------------------------------
+# 11. PAGES CARRIÈRES (source « sites_carrieres »)
+# ...
+# ---------------------------------------------------------------------
+sites_carrieres_liste:
+  - {entreprise: Palantir, type: lever, identifiant: palantir}
+  - {entreprise: Databricks, type: greenhouse, identifiant: databricks}
