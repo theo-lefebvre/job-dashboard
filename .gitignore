@@ -1,0 +1,15 @@
+# Documents personnels : ne jamais envoyer sur GitHub
+[Cc][Vv]*
+*.pdf
+*.doc
+*.docx
+[Ll]ettre*
+[Cc]over*
+perso/
+
+# Secrets et fichiers techniques
+.env
+*.key
+__pycache__/
+*.pyc
+.DS_Store
