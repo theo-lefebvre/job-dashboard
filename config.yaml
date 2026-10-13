@@ -245,7 +245,7 @@ dates_limites_manuelles: []
 # 10. SOURCES (true = activée, false = désactivée)
 # ---------------------------------------------------------------------
 sources:
-  business_france: true     # VIE : fiable
+  business_france: false     # VIE : fiable
   sites_carrieres: true     # cabinets et grands groupes (à compléter plus tard)
   france_travail: true      # ignorée si aucune clé n'est fournie
   welcome_to_the_jungle: true   # fragile
