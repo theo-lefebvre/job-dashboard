@@ -4,6 +4,7 @@ Ces trois outils de recrutement fournissent une interface publique pour lire
 les offres d'une entreprise. Les entreprises à suivre sont listées dans
 config.yaml (section sites_carrieres_liste).
 Seules les offres dont l'intitulé correspond à tes métiers sont gardées.
+Si rien n'est trouvé, un message explique pourquoi (onglet « Sources »).
 """
 import html
 import re
@@ -84,7 +85,9 @@ def _ashby(company, ident):
 
 def fetch(cfg):
     boards = cfg.get("sites_carrieres_liste") or []
-    offers, errors = [], []
+    if not boards:
+        raise RuntimeError("Aucune entreprise lue dans sites_carrieres_liste (config.yaml)")
+    offers, notes, errors = [], [], []
     for board in boards:
         company = board.get("entreprise", "?")
         kind = matching.norm(board.get("type"))
@@ -100,12 +103,14 @@ def fetch(cfg):
                 found = _ashby(company, ident)
             else:
                 raise ValueError(f"type inconnu : {kind}")
+            found = list(found)
             kept = [o for o in found if o.title and _relevant(o.title, cfg)]
-            print(f"[{NAME}] {company} : {len(kept)} offre(s) pertinente(s)")
+            notes.append(f"{company}: {len(found)} lus, {len(kept)} gardés")
+            print(f"[{NAME}] {company} : {len(found)} poste(s) lus, {len(kept)} pertinent(s)")
             offers.extend(kept)
         except Exception as exc:
-            errors.append(f"{company} : {type(exc).__name__} {str(exc)[:80]}")
+            errors.append(f"{company}: {type(exc).__name__} {str(exc)[:60]}")
             print(f"[{NAME}] {company} : ERREUR {exc}")
-    if errors and not offers:
-        raise RuntimeError(" | ".join(errors)[:300])
+    if not offers:
+        raise RuntimeError(" | ".join(notes + errors))
     return offers
